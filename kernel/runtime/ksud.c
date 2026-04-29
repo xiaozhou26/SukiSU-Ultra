@@ -1,3 +1,5 @@
+#include <linux/jump_label.h>
+#include <linux/export.h>
 bool ksu_module_mounted __read_mostly = false;
 bool ksu_boot_completed __read_mostly = false;
 
@@ -30,8 +32,23 @@ static void stop_execve_hook();
 static void stop_input_hook();
 
 #if defined(CONFIG_KSU_SUSFS) && defined(KSU_COMPAT_USE_STATIC_KEY)
-extern struct static_key_false ksu_init_rc_hook_key_false;
-extern struct static_key_false ksu_input_hook_key_false;
+DEFINE_STATIC_KEY_FALSE(ksu_init_rc_hook_key_false);
+EXPORT_SYMBOL(ksu_init_rc_hook_key_false);
+
+DEFINE_STATIC_KEY_FALSE(ksu_input_hook_key_false);
+EXPORT_SYMBOL(ksu_input_hook_key_false);
+
+bool ksu_is_init_rc_hook_enabled(void)
+{
+    return static_branch_unlikely(&ksu_init_rc_hook_key_false);
+}
+EXPORT_SYMBOL(ksu_is_init_rc_hook_enabled);
+
+bool ksu_is_input_hook_enabled(void)
+{
+    return static_branch_unlikely(&ksu_input_hook_key_false);
+}
+EXPORT_SYMBOL(ksu_is_input_hook_enabled);
 #else
 bool ksu_vfs_read_hook __read_mostly = true;
 bool ksu_execveat_hook __read_mostly = true;
